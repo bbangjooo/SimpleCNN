@@ -46,7 +46,7 @@ class Net(nn.Module):
 
 model=Net()
 
-# Loss & Optimizer
+# Optimizer
 optimizer=optim.SGD(model.parameters(),lr=0.01,momentum=0.5)
 
 # Train & Test
