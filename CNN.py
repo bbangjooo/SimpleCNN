@@ -4,6 +4,7 @@ from torchvision.datasets import MNIST
 from torch.utils.data import DataLoader
 from torchvision import transforms
 from torch.autograd import Variable
+import math
 
 # Settings
 
@@ -22,6 +23,8 @@ train_loader=DataLoader(dataset=train_set,batch_size=batch_size,shuffle=True)
 test_loader=DataLoader(dataset=test_set,batch_size=batch_size,shuffle=True)
 
 # Model
+# 정확도를 올리기 위해
+# Batch nomalization, Dropout
 
 class Net(nn.Module):
     def __init__(self):
@@ -32,21 +35,49 @@ class Net(nn.Module):
         self.mp = nn.MaxPool2d(2)
         self.fc = nn.Linear(30,20)
         self.fc2 = nn.Linear(20,10)
-
+        self.features = nn.Sequential(
+            nn.Conv2d(1,32,kernel_size=3,padding=1),
+            nn.BatchNorm2d(32),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(32,32, kernel_size=3, padding=1),
+            nn.BatchNorm2d(32),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=2,stride=2),
+            nn.Conv2d(32,64,kernel_size=3,padding=1),
+            nn.BatchNorm2d(64),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=2,stride=2)
+        )
+        self.classifier=nn.Sequential(
+            nn.Dropout(p=0.5),
+            nn.Linear(64*7*7,512),
+            nn.BatchNorm1d(512),
+            nn.ReLU(inplace=True),
+            nn.Dropout(p=0.5),
+            nn.Linear(512,512),
+            nn.BatchNorm1d(512),
+            nn.ReLU(inplace=True),
+            nn.Dropout(p=0.5),
+            nn.Linear(512,10)
+        )
     def forward(self,x):
         in_size=x.size(0)
-        x=nn.functional.relu(self.mp(self.conv1(x))) # output_size: ( 28-5 + 1 ) / 2(by MaxPooling)
-        x=nn.functional.relu(self.mp(self.conv2(x)))
-        x=nn.functional.relu(self.conv3(x))
-        x=x.view(in_size,-1)
-
-        x=self.fc(x)
-        x=self.fc2(x)
-        return nn.functional.log_softmax(x)
-
+        #x=nn.functional.relu(self.mp(self.conv1(x))) # output_size: ( 28-5 + 1 ) / 2(by MaxPooling)
+        #x=nn.functional.relu(self.mp(self.conv2(x)))
+        #x=nn.functional.relu(self.conv3(x))
+        #x=x.view(in_size,-1)
+#
+        #x=self.fc(x)
+        #x=self.fc2(x)
+        x = self.features(x)
+        x = x.view(in_size,-1)
+        x = self.classifier(x)
+        #return nn.functional.log_softmax(x)
+        return x
 model=Net()
 
-# Optimizer
+# Loss & Optimizer
+criterion = nn.CrossEntropyLoss()
 optimizer=optim.SGD(model.parameters(),lr=0.01,momentum=0.5)
 
 # Train & Test
@@ -59,7 +90,8 @@ def train(epoch):
         #print (data.shape)
         optimizer.zero_grad()
         output = model(data)
-        loss = nn.functional.nll_loss(output,target)
+        #loss = nn.functional.nll_loss(output,target)
+        loss=criterion(output,target)
         loss.backward()
         optimizer.step()
         if batch_idx % 10 ==0:
@@ -69,21 +101,21 @@ def train(epoch):
 
 def test():
     model.eval()
-    test_loss=0
+    loss=0
     correct=0
     for data,target in test_loader:
-        data, target=Variable(data,volatile=True),Variable(target)
+        data, target=Variable(data),Variable(target)
         output=model(data)
-        test_loss+=nn.functional.nll_loss(output,target,size_average=False).data
+        loss+=nn.functional.cross_entropy(output,target,reduction='sum').item()
         pred=output.data.max(1,keepdim=True)[1]
         correct+=pred.eq(target.data.view_as(pred)).cpu().sum()
 
-    test_loss /= len(test_loader.dataset)
+    loss /= len(test_loader.dataset)
     print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
-        test_loss, correct, len(test_loader.dataset),
+        loss, correct, len(test_loader.dataset),
         100. * correct / len(test_loader.dataset)))
 
-
-for epoch in range(1, 10):
-    train(epoch)
-    test()
+if __name__ == "__main__":
+    for epoch in range(0,5):
+        train(epoch)
+        test()
