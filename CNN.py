@@ -29,20 +29,18 @@ test_loader=DataLoader(dataset=test_set,batch_size=batch_size,shuffle=True)
 class Net(nn.Module):
     def __init__(self):
         super(Net,self).__init__()
-        self.conv1 = nn.Conv2d(1,10,kernel_size=5) # depth: 1, output_volume_size(filter_depth): 10, patch size: 5x5
-        self.conv2 = nn.Conv2d(10,20,kernel_size=5)
-        self.conv3 = nn.Conv2d(20,30,kernel_size=4)
-        self.mp = nn.MaxPool2d(2)
-        self.fc = nn.Linear(30,20)
-        self.fc2 = nn.Linear(20,10)
-        self.features = nn.Sequential(
+        self.layer1= nn.Sequential(
             nn.Conv2d(1,32,kernel_size=3,padding=1),
             nn.BatchNorm2d(32),
-            nn.ReLU(inplace=True),
+            nn.ReLU(inplace=True)
+        )
+        self.layer2= nn.Sequential(
             nn.Conv2d(32,32, kernel_size=3, padding=1),
             nn.BatchNorm2d(32),
             nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=2,stride=2),
+            nn.MaxPool2d(kernel_size=2,stride=2)
+        )
+        self.layer3= nn.Sequential(
             nn.Conv2d(32,64,kernel_size=3,padding=1),
             nn.BatchNorm2d(64),
             nn.ReLU(inplace=True),
@@ -62,18 +60,13 @@ class Net(nn.Module):
         )
     def forward(self,x):
         in_size=x.size(0)
-        #x=nn.functional.relu(self.mp(self.conv1(x))) # output_size: ( 28-5 + 1 ) / 2(by MaxPooling)
-        #x=nn.functional.relu(self.mp(self.conv2(x)))
-        #x=nn.functional.relu(self.conv3(x))
-        #x=x.view(in_size,-1)
-#
-        #x=self.fc(x)
-        #x=self.fc2(x)
-        x = self.features(x)
+        x = self.layer1(x)
+        x = self.layer2(x)
+        x = self.layer3(x)
         x = x.view(in_size,-1)
         x = self.classifier(x)
-        #return nn.functional.log_softmax(x)
         return x
+
 model=Net()
 
 # Loss & Optimizer
