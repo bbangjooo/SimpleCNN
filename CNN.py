@@ -74,16 +74,12 @@ criterion = nn.CrossEntropyLoss()
 optimizer=optim.SGD(model.parameters(),lr=0.01,momentum=0.5)
 
 # Train & Test
-
 def train(epoch):
     model.train()
     for batch_idx, (data,target) in enumerate(train_loader):
         data, target=Variable(data),Variable(target)
-        #print ("RAW DATA")
-        #print (data.shape)
         optimizer.zero_grad()
         output = model(data)
-        #loss = nn.functional.nll_loss(output,target)
         loss=criterion(output,target)
         loss.backward()
         optimizer.step()

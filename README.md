@@ -12,7 +12,7 @@
 
 ### Questions
 
-1. layer들에서 `Conv2d`,`BatchNorm2d`, `ReLU` 이렇게 거치는데 각각 거칠 때의 효과?? 왜 하는지?
+1. layer들에서 `Conv2d`,`BatchNorm2d`, `ReLU` 이렇게 거치는데 각각 거칠 때의 효과들 좀 자세히 알고 싶다.
 2. `Dropout` ?? 
 
 
