@@ -64,6 +64,7 @@ class Net(nn.Module):
         x = self.layer2(x)
         x = self.layer3(x)
         x = x.view(in_size,-1)
+        print (x.shape)
         x = self.classifier(x)
         return x
 
